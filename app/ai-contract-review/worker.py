@@ -26,6 +26,7 @@ async def main():
     worker = Worker(
         temporal_client,
         task_queue=TEMPORAL_TASK_QUEUE,
+        workflows=[ContractReviewWorkflow, PDFSummaryWorkflow],
         activities = [extract_pdf, call_llm],
     )
 

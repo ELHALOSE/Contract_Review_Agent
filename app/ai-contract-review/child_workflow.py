@@ -56,7 +56,7 @@ class PDFSummaryWorkflow:
             text=extracted_md.markdown_text[:5_000]
         )
 
-        llm_resutlt = await workflow.execute_activity(
+        llm_result = await workflow.execute_activity(
             call_llm,
             CallLLMInput(prompt=prompt),
             retry_policy=DEFAULT_RETRY_POLICY,

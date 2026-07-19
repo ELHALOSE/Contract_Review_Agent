@@ -8,8 +8,12 @@ import pymupdf4llm
 from dotenv import load_dotenv
 from temporalio import activity
 from openai import OpenAI 
+from pathlib import Path
+
 
 load_dotenv()
+
+
 
 # ── Dataclasses ───────────────────────────────────────────────────────────────
 
@@ -67,12 +71,23 @@ async def extract_pdf(params:ExtractPDFInput)->ExtractPDFOutput:
     client = get_s3_client()
     bucket,key = parse_s3_path(params.s3_path)
     filename = Path(key).name
-    TEMP_DIR = os.environ["TEMP_DIR"]
-    local_path =str(Path(TEMP_DIR) / filename)
-    s3_client.download_file(
+
+    temp_dir = Path(os.environ["TEMP_DIR"])
+
+    print("TEMP_DIR =", temp_dir)
+    print("Exists =", temp_dir.exists())
+    print("Writable =", os.access(temp_dir, os.W_OK))
+    print("Owner UID =", os.stat(temp_dir).st_uid)
+    print("Current UID =", os.getuid())
+
+    local_path = temp_dir / filename
+    print("LOCAL_PATH =", local_path)
+
+
+    client.download_file(
         Bucket=bucket,
         Key=key,
-        Filename=local_path
+        Filename=str(local_path)
     )
 
     doc = fitz.open(local_path)
@@ -81,6 +96,7 @@ async def extract_pdf(params:ExtractPDFInput)->ExtractPDFOutput:
     activity.logger.info(f"Download {total_pages}-page pdf :{params.s3_path}")
 
     all_text_chunks =[]
+    total_char_num = 0
     num_batchs = math.ceil(total_pages / params.batch_size)
     for i in range(num_batchs):
 
@@ -110,33 +126,28 @@ async def extract_pdf(params:ExtractPDFInput)->ExtractPDFOutput:
         page_count=total_pages
     )
 
-#activity 2 call the llm from openrouter 
+# activity 2 call the llm from OpenAI
 @activity.defn
-async def call_llm(params:CallLLMInput)->CallLLMOutput:
-    activity.logger.info(f"starting call llm")
+async def call_llm(params: CallLLMInput) -> CallLLMOutput:
+    activity.logger.info("starting call llm")
 
-    activity.hearbeat({
-        "stage":"calling llm",
-        "prompt":len(params.prompt)
-    })
-
-    llm =OpenAI(
-        api_key=os.environ["OPENAI_API_KEY"],
-        base_url = "https://api.openai.com/v1",
-            )
-
-    response = llm.create_completion(
-        model=os.environ["OPENAI_MODEL","openai/gpt-4o-mini"],
-        messages=[
-            {"role":"user","content":params.prompt}
-        ],
-        max_tokens=8000
+    llm = OpenAI(
+        api_key=os.environ["GROQ_API_KEY"],
+        base_url="https://api.groq.com/openai/v1",
     )
 
-    content = response.choices[0].message.content
-
-    activity.logger.info(f"Completed call llm and LLM return {len(content)}")
-    
-    return CallLLMOutput(
-        content=content
+    try:
+        response = llm.chat.completions.create(
+            model=os.environ["GROQ_MODEL"], 
+            messages=[{"role": "user", "content": params.prompt}],
+            max_tokens=1000
         )
+
+        content = response.choices[0].message.content
+        activity.logger.info(f"Completed call llm. LLM returned {len(content)} chars.")
+        
+        return CallLLMOutput(content=content)
+        
+    except Exception as e:
+        activity.logger.error(f"Error calling OpenAI: {str(e)}")
+        raise e 

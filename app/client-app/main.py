@@ -56,7 +56,7 @@ class ProcessPDFStartResponse(BaseModel):
     workflow_id: str
 
 class StartReviewRequest(BaseModel):
-    s3_path: list[str]
+    s3_paths: list[str]
     max_revisions: int = 2
 
 
@@ -78,8 +78,10 @@ async def health():
 async def process_pdf(request:ProcessPDFRequest):
     #define Id
     workflow_id = f"pdf-pipline-{uuid.uuid4()}"
+    
     #connect to temporal
     client = await get_temporal_client()
+
     #start workflow
     results = await client.execute_workflow(
         "PDFPipelineWorkflow",
@@ -99,12 +101,15 @@ async def process_pdf(request:ProcessPDFRequest):
 
 @app.post("/process_pdf/start",response_model=ProcessPDFStartResponse)
 async def process_pdf(request:ProcessPDFRequest):
+
     #define Id
     workflow_id = f"pdf-pipline-{uuid.uuid4()}"
+
     #connect to temporal
     client = await get_temporal_client()
+    
     #start workflow
-    results = await client.execute_workflow(
+    results = await client.start_workflow(
         "PDFPipelineWorkflow",
         args=[
             {
@@ -144,13 +149,14 @@ async def get_workflow_status(workflow_id: str):
 async def start_contract_review(request:StartReviewRequest):
     #define Id
     workflow_id = f"contract-review-{uuid.uuid4()}"
+
     #connect to temporal
     client = await get_temporal_client()
 
     await client.start_workflow(
         "ContractReviewWorkflow",
         args=[{
-            "s3_paths": request.s3_path,
+            "s3_paths": request.s3_paths,
             "max_revisions": request.max_revisions
         }],
         id=workflow_id,
