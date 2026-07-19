@@ -30,25 +30,31 @@ An AI-powered contract review system that leverages **Temporal Workflows**, **Fa
 
 ## Project Structure
 
+## Project Structure
+ 
 ```text
 .
 ├── app/
 │   ├── ai-contract-review/        # this project
+│   │   ├── Docker/
+│   │   │   ├── Dockerfile         # builds worker + api into one image
+│   │   │   └── docker-compose.yml # Temporal + Postgres + Temporal UI + worker + api
 │   │   ├── activities.py          # extract_pdf, call_llm activities
 │   │   ├── child_workflow.py      # PDFSummaryWorkflow (per-PDF)
 │   │   ├── parent_workflow.py     # ContractReviewWorkflow (fan-out/fan-in)
 │   │   ├── prompts.py             # summary / synthesis / revision prompts
 │   │   ├── worker.py              # Temporal worker entrypoint
-│   │   ├── main.py                # FastAPI app
-│   │   └── requirements.txt
+│   │   ├── requirements.txt
+│   │   └── .env
 │   ├── client-app/
+│   │   └── main.py                # FastAPI app (lives here, not in ai-contract-review/)
 │   ├── pdf-extraction/            
 │   └── pdf-extraction-temporal/   
 │
 ├── setup/
 │   └── samples-server/
 │       └── compose/
-│           └── docker-compose-postgres.yml   # optional, unused by app code today
+│           └── docker-compose-postgres.yml   # legacy/unused — superseded by Docker/docker-compose.yml above
 │
 ├── temporal/                      # local Temporal CLI / venv artifacts
 └── .env
