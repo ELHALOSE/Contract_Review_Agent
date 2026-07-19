@@ -93,8 +93,26 @@ pip install -r requirements.txt
 
 Create a `.env` file in `app/ai-contract-review/`:
 
-
 ---
+ 
+## Run with Docker
+ 
+The easiest way to run everything (Temporal server + its Postgres backing store + Temporal Web UI + the worker + the FastAPI app) is via the provided Docker Compose setup.
+
+### Start everything
+ 
+```bash
+cd app/ai-contract-review/Docker
+docker compose up --build
+```
+### Resetting from scratch
+ 
+If Temporal's Postgres volume ever gets into a bad state (e.g. an interrupted schema setup), wipe it and start clean:
+ 
+```bash
+docker compose down -v
+docker compose up --build
+```
 
 ## Start Temporal Server
 

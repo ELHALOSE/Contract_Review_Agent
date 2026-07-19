@@ -1,0 +1,87 @@
+services:
+  # ── Temporal's own database (separate from any app DB you might add later) ──
+  temporal-postgresql:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+    volumes:
+      - temporal-postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  # ── Temporal server itself ──
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    depends_on:
+      - temporal-postgresql
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=temporal-postgresql
+    ports:
+      - "7233:7233"
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  # ── Web UI to inspect workflows at http://localhost:8080 (optional but handy) ──
+  temporal-ui:
+    image: temporalio/ui:2.31.2
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8080:8080"
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  # ── Your Temporal worker ──
+  worker:
+    build:
+      context: ../..
+      dockerfile: ai-contract-review/docker/DockerFile
+    image: ai-contract-review:latest
+    env_file:
+      - ../.env
+    environment:
+      - TEMPORAL_HOST=temporal:7233
+    command: ["python", "worker.py"]
+    depends_on:
+      - temporal
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  # ── Your FastAPI app ──
+  api:
+    build:
+      context: ../..
+      dockerfile: ai-contract-review/docker/DockerFile
+    image: ai-contract-review:latest
+    env_file:
+      - ../.env
+    environment:
+      - TEMPORAL_HOST=temporal:7233
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      - temporal
+      - worker
+    networks:
+      - app-net
+    restart: unless-stopped
+
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  temporal-postgres-data:

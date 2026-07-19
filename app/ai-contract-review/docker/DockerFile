@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1
+
+FROM python:3.11-slim AS base
+
+# System deps needed by PyMuPDF (fitz) at build/runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install python deps first (better layer caching)
+COPY ai-contract-review/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the worker/activities/workflows source
+COPY ai-contract-review/. .
+
+# main.py (FastAPI app) lives in a separate sibling folder — copy it in explicitly
+COPY client-app/main.py .
+
+# Where extract_pdf downloads PDFs before parsing (matches TEMP_DIR in .env)
+RUN mkdir -p /tmp/pdf-pipeline
+
+ENV PYTHONUNBUFFERED=1
+
+# Default command runs the Temporal worker.
+# Override with `docker run <image> uvicorn main:app --host 0.0.0.0 --port 8000`
+# to run the FastAPI app instead (see docker-compose.yml for both services).
+CMD ["python", "worker.py"]
