@@ -63,6 +63,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./app/ai-contract-review/docker/Dockerfile
+          file: ./app/ai-contract-review/docker/DockerFile
           push: false # حالياً جعلناها false لأننا نختبر البناء فقط ولا نريد رفعها بعد
           tags: ai-contract-review:latest
