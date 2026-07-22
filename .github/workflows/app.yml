@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: AI Contract Review CI
+name: AI Contract Review CI/CD
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. إعداد بيئة بايثون (تطابق الإصدار لديك، مثلاً 3.13)
+      # 2. إعداد بيئة بايثون
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -41,28 +41,14 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f app/ai-contract-review/requirements.txt ]; then pip install -r app/ai-contract-review/requirements.txt; fi
 
-      # 4. تشغيل الاختبارات أو التحقق من الكود (إذا كان لديك pytest مثلاً)
-      - name: Run Tests
-        run: |
-          # أضف أمر الاختبارات هنا، أو اتركها متخطية لو لم تكتب Tests بعد
-          echo "No tests configured yet, skipping..."
-
-jobs:
-  build-and-docker:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # 1. تثبيت أدوات بناء الـ Docker داخل السيرفر المؤقت
+      # 4. بناء الـ Docker Image للتأكد من سلامتها
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 2. تجربة بناء الـ Docker Image للتأكد من أنها سليمة 100%
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./app/ai-contract-review
           file: ./app/ai-contract-review/docker/DockerFile
-          push: false # حالياً جعلناها false لأننا نختبر البناء فقط ولا نريد رفعها بعد
+          push: false
           tags: ai-contract-review:latest
