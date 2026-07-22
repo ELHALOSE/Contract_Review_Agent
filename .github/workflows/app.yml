@@ -62,7 +62,7 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./app/ai-contract-review
           file: ./app/ai-contract-review/docker/DockerFile
           push: false # حالياً جعلناها false لأننا نختبر البناء فقط ولا نريد رفعها بعد
           tags: ai-contract-review:latest
