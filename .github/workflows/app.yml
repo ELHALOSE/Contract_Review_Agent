@@ -46,3 +46,23 @@ jobs:
         run: |
           # أضف أمر الاختبارات هنا، أو اتركها متخطية لو لم تكتب Tests بعد
           echo "No tests configured yet, skipping..."
+
+jobs:
+  build-and-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1. تثبيت أدوات بناء الـ Docker داخل السيرفر المؤقت
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 2. تجربة بناء الـ Docker Image للتأكد من أنها سليمة 100%
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./app/ai-contract-review/docker/Dockerfile
+          push: false # حالياً جعلناها false لأننا نختبر البناء فقط ولا نريد رفعها بعد
+          tags: ai-contract-review:latest
