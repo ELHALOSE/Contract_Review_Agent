@@ -48,7 +48,7 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./app/ai-contract-review
+          context: ./app
           file: ./app/ai-contract-review/docker/DockerFile
           push: false
           tags: ai-contract-review:latest
