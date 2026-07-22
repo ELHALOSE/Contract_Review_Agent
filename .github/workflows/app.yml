@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f app/ai-contract-review/requirements.txt ]; then pip install -r app/ai-contract-review/requirements.txt; fi
 
       # 4. تشغيل الاختبارات أو التحقق من الكود (إذا كان لديك pytest مثلاً)
       - name: Run Tests
